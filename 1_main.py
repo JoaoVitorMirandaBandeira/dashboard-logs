@@ -1,8 +1,13 @@
 import streamlit as stl
 import pandas as pd
 import plotly.express as px
+import requests
+import io
 from datetime import datetime, timedelta
 
+url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=ps_log&subfolder=%2F"
+usuario = "***REMOVED_USER***"
+senha = "***REMOVED_PASSWORD***"
 
 @stl.cache_data
 def load_document(path_document):
@@ -21,12 +26,17 @@ stl.set_page_config(
     layout="wide"
 )
 # path_document = stl.sidebar.file_uploader(label="Carregue seu arquivo CSV de logs", type=["csv"])
-path_document = "./logsv2.csv"
-if path_document is None:
-    stl.info("Por favor, carregue um arquivo CSV para começar.")
-    stl.stop()
+response = requests.get(url, auth=(usuario, senha))
+csv_content = response.text
+# LINHA CORRIGIDA
+df_original = pd.read_csv(io.BytesIO(response.content), encoding='utf-8', engine='python', on_bad_lines='skip')
+df_original['created_at'] = pd.to_datetime(df_original['created_at'], errors='coerce')
+# path_document = "./logsv2.csv"
+#if path_document is None:
+#    stl.info("Por favor, carregue um arquivo CSV para começar.")
+#    stl.stop()
 
-df_original = load_document(path_document)
+#df_original = load_document(path_document)
 
 if df_original is None:
     stl.stop()
@@ -43,7 +53,7 @@ selected_clients = stl.sidebar.multiselect(
 # Filtros de datas
 min_date = df_original['created_at'].min().date()
 max_date = df_original['created_at'].max().date()
-default_start_date = max_date - timedelta(days=7)
+default_start_date = max_date - timedelta(days=3)
 date_range = stl.sidebar.date_input(
     label="Periodo",
     value=(default_start_date, max_date),
