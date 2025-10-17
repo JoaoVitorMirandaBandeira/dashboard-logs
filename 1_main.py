@@ -133,7 +133,9 @@ with col_a:
     # Erros por Componente
     stl.subheader("Top components com erros")
     df_plot = df_filtered[df_filtered['component'] != "N/A"]
-    erros_by_component = df_plot['component'].value_counts().nlargest(10).reset_index()
+    df_plot_new = df_plot
+    df_plot_new['component'] = df_plot_new['component'] + " (" + df_plot_new['client'] + ")"
+    erros_by_component = df_plot_new['component'].value_counts().nlargest(10).reset_index()
     erros_by_component.columns = ['component', 'count']  # Renomear colunas
     erros_by_component = erros_by_component.sort_values(by='count', ascending=False)
     px_fig = px.bar(erros_by_component, x='count', y='component', orientation='h',height=500)
