@@ -6,8 +6,8 @@ import io
 from datetime import datetime, timedelta
 
 url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=ps_log&subfolder=%2F"
-usuario = "***REMOVED_USER***"
-senha = "***REMOVED_PASSWORD***"
+usuario = stl.secrets['username']
+senha = stl.secrets['password']
 
 @stl.cache_data
 def load_document(path_document):
