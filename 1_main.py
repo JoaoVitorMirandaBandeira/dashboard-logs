@@ -125,7 +125,7 @@ col_a, col_b = stl.columns(2)
 with col_a:
     # Erros ao longo do tempo 
     stl.subheader("Erros ao longo do tempo")
-    erros_over_time = df_filtered.set_index('created_at').resample('D').size().reset_index(name='count')
+    erros_over_time = df_filtered.set_index('created_at').resample('H').size().reset_index(name='count')
     fig_time = px.line(erros_over_time, x='created_at', y='count', title="Tendência de Erros Diários", markers=True)
     fig_time.update_layout(xaxis_title="Data", yaxis_title="Número de Erros")
     stl.plotly_chart(fig_time, use_container_width=True)
