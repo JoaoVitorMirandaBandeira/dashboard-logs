@@ -60,6 +60,12 @@ date_range = stl.sidebar.date_input(
     max_value=max_date,
     min_value=min_date
 )
+description = ["Todos"] + sorted([str(item) for item in df_original['description'].unique()])
+selected_description = stl.sidebar.multiselect(
+    label="Descrição",
+    options=description,
+    default=["Todos"]
+)
 # Filtro de categoria
 categories = ["Todos"] + sorted(df_original['category'].unique())
 selected_categories = stl.sidebar.multiselect(
@@ -91,6 +97,8 @@ else:
     stl.stop()
 if "Todos" not in selected_clients:
     df_filtered = df_filtered[df_filtered['client'].isin(selected_clients)]
+if "Todos" not in selected_description:
+    df_filtered = df_filtered[df_filtered['description'].isin(selected_description)]
 if "Todos" not in selected_categories:
     df_filtered = df_filtered[df_filtered['category'].isin(selected_categories)]
 if "Todos" not in selected_situations:
