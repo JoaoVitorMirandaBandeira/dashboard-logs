@@ -41,51 +41,69 @@ df_original['created_at'] = pd.to_datetime(df_original['created_at'], errors='co
 if df_original is None:
     stl.stop()
 
+
+df = df_original.copy()
 stl.sidebar.title("Filtros")
 
 # Filtro de clientes
-clients = ["Todos"] + sorted(df_original['client'].unique())
+clients = ["Todos"] + sorted(df['client'].dropna().unique().tolist())
 selected_clients = stl.sidebar.multiselect(
     label="Cliente",
     options=clients,
     default=["Todos"]
 )
-# Filtros de datas
-min_date = df_original['created_at'].min().date()
-max_date = df_original['created_at'].max().date()
-default_start_date = max_date - timedelta(days=3)
-date_range = stl.sidebar.date_input(
-    label="Periodo",
-    value=(default_start_date, max_date),
-    max_value=max_date,
-    min_value=min_date
-)
-description = ["Todos"] + sorted([str(item) for item in df_original['description'].unique()])
+
+if "Todos" not in selected_clients:
+    df = df[df['client'].isin(selected_clients)]
+
+description = ["Todos"] + sorted(df['description'].dropna().astype(str).unique().tolist())
 selected_description = stl.sidebar.multiselect(
     label="Descrição",
     options=description,
     default=["Todos"]
 )
+
+if "Todos" not in selected_description:
+    df = df[df['description'].isin(selected_description)]
+
 # Filtro de categoria
-categories = ["Todos"] + sorted(df_original['category'].unique())
+categories = ["Todos"] + sorted(df['category'].dropna().unique().tolist())
 selected_categories = stl.sidebar.multiselect(
     label="Categoria",
     options=categories,
     default=["Todos"]
 )
+
+if "Todos" not in selected_categories:
+    df = df[df['category'].isin(selected_categories)]
+
 # Filtro de situações
-situations = ["Todos"] + sorted(df_original['situation'].unique())
+situations = ["Todos"] + sorted(df['situation'].dropna().unique().tolist())
 selected_situations = stl.sidebar.multiselect(
     label="Situação",
     options=situations,
     default=["Todos"]
 )
 
+if "Todos" not in selected_situations:
+    df = df[df['situation'].isin(selected_situations)]
+
+# Filtros de datas
+min_date = df['created_at'].min().date()
+max_date = df['created_at'].max().date()
+default_start_date = min_date
+date_range = stl.sidebar.date_input(
+    label="Periodo",
+    value=(default_start_date, max_date),
+    max_value=max_date,
+    min_value=min_date
+)
+
 stl.sidebar.info("Dica: O carregamento inicial pode demorar, mas os filtros serão rápidos devido ao cache.")
 stl.sidebar.markdown("Desenvolvido por [João Vitor](https://github.com/JoaoVitorMirandaBandeira)")
 
 # Filtrar o data frame
-df_filtered = df_original.copy()
+df_filtered = df.copy()
 if len(date_range) == 2:
     start_date, end_date = date_range
     start_datetime = pd.to_datetime(start_date)
@@ -95,14 +113,7 @@ if len(date_range) == 2:
     ]
 else:
     stl.stop()
-if "Todos" not in selected_clients:
-    df_filtered = df_filtered[df_filtered['client'].isin(selected_clients)]
-if "Todos" not in selected_description:
-    df_filtered = df_filtered[df_filtered['description'].isin(selected_description)]
-if "Todos" not in selected_categories:
-    df_filtered = df_filtered[df_filtered['category'].isin(selected_categories)]
-if "Todos" not in selected_situations:
-    df_filtered = df_filtered[df_filtered['situation'].isin(selected_situations)]
+
 if df_filtered.empty:
     stl.warning("Nenhum dado encontrado para os filtros selecionados.")
     stl.stop()
@@ -133,7 +144,7 @@ col_a, col_b = stl.columns(2)
 with col_a:
     # Erros ao longo do tempo 
     stl.subheader("Erros ao longo do tempo")
-    erros_over_time = df_filtered.set_index('created_at').resample('H').size().reset_index(name='count')
+    erros_over_time = df_filtered.set_index('created_at').resample('h').size().reset_index(name='count')
     fig_time = px.line(erros_over_time, x='created_at', y='count', title="Tendência de Erros Diários", markers=True)
     fig_time.update_layout(xaxis_title="Data", yaxis_title="Número de Erros")
     stl.plotly_chart(fig_time, use_container_width=True)
