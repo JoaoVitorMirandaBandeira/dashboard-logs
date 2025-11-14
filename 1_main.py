@@ -107,7 +107,10 @@ invert_filter_description = stl.sidebar.checkbox(
 )
 stl.sidebar.markdown('<hr class="small-divider">', unsafe_allow_html=True)
 if "Todos" not in selected_categories:
-    df = df[df['category'].isin(selected_categories)]
+    if invert_filter_description:
+        df = df[~df['category'].isin(selected_categories)]
+    else:
+        df = df[df['category'].isin(selected_categories)]
 
 # Filtro de situações
 situations = ["Todos"] + sorted(df['situation'].dropna().unique().tolist())
