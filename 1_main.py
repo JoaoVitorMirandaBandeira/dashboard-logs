@@ -5,6 +5,16 @@ import requests
 import io
 from datetime import datetime, timedelta
 
+stl.markdown("""
+<style>
+.small-divider {
+    border-top: 1px solid rgba(250, 250, 250, 0.1);
+    margin-top: 5px !important;
+    margin-bottom: 10px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=ps_log&subfolder=%2F"
 usuario = stl.secrets['username']
 senha = stl.secrets['password']
@@ -53,8 +63,17 @@ selected_clients = stl.sidebar.multiselect(
     default=["Todos"]
 )
 
+invert_filter = stl.sidebar.checkbox(
+    label="Inverter filtro",
+    key="invert_client_filter",
+    value=False
+)
+stl.sidebar.markdown('<hr class="small-divider">', unsafe_allow_html=True)
 if "Todos" not in selected_clients:
-    df = df[df['client'].isin(selected_clients)]
+    if invert_filter:
+        df = df[~df['client'].isin(selected_clients)]
+    else:
+        df = df[df['client'].isin(selected_clients)]
 
 description = ["Todos"] + sorted(df['description'].dropna().astype(str).unique().tolist())
 selected_description = stl.sidebar.multiselect(
@@ -62,9 +81,17 @@ selected_description = stl.sidebar.multiselect(
     options=description,
     default=["Todos"]
 )
-
+invert_filter_description = stl.sidebar.checkbox(
+    label="Inverter filtro",
+    key="invert_description_filter",
+    value=False
+)
+stl.sidebar.markdown('<hr class="small-divider">', unsafe_allow_html=True)
 if "Todos" not in selected_description:
-    df = df[df['description'].isin(selected_description)]
+    if invert_filter_description:
+        df = df[~df['description'].isin(selected_description)]
+    else:
+        df = df[df['description'].isin(selected_description)]
 
 # Filtro de categoria
 categories = ["Todos"] + sorted(df['category'].dropna().unique().tolist())
@@ -73,7 +100,12 @@ selected_categories = stl.sidebar.multiselect(
     options=categories,
     default=["Todos"]
 )
-
+invert_filter_description = stl.sidebar.checkbox(
+    label="Inverter filtro",
+    key="invert_category_filter",
+    value=False
+)
+stl.sidebar.markdown('<hr class="small-divider">', unsafe_allow_html=True)
 if "Todos" not in selected_categories:
     df = df[df['category'].isin(selected_categories)]
 
