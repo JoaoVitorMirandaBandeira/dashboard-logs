@@ -15,7 +15,7 @@ stl.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=ps_log&subfolder=%2F"
+url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=logs&subfolder=%2F"
 usuario = stl.secrets['username']
 senha = stl.secrets['password']
 
