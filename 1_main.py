@@ -37,7 +37,7 @@ stl.markdown("""
     font-size: 0.78em;
 }
 .cache-info .value {
-    color: #e5e7eb;
+    color: #9d9d9d;
     font-variant-numeric: tabular-nums;
 }
 .cache-info .age {
