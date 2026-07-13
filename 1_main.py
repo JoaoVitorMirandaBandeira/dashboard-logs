@@ -2,7 +2,6 @@ import streamlit as stl
 import pandas as pd
 import plotly.express as px
 import requests
-import io
 from datetime import datetime, timedelta
 
 stl.markdown("""
@@ -12,43 +11,84 @@ stl.markdown("""
     margin-top: 5px !important;
     margin-bottom: 10px !important;
 }
+.cache-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: rgba(250, 250, 250, 0.04);
+    border: 1px solid rgba(250, 250, 250, 0.08);
+    border-radius: 8px;
+    font-size: 0.85em;
+    color: #9ca3af;
+}
+.cache-info .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+}
+.cache-info .label {
+    color: #6b7280;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-size: 0.78em;
+}
+.cache-info .value {
+    color: #e5e7eb;
+    font-variant-numeric: tabular-nums;
+}
+.cache-info .age {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 0.85em;
+}
 </style>
 """, unsafe_allow_html=True)
 
-url = "https://automacao.rubeus.com.br/clients/reports/bi-csv/download?name=Rubeus&token=7fd8f58fbb96e823dfb08511d9e9eb0a&filename=logs&subfolder=%2F"
-usuario = stl.secrets['username']
-senha = stl.secrets['password']
+API_URL = "https://conectortotvs.apprbs.com.br/api/log-center/list-log"
+JSON_DATA_KEY = "data"
 
-@stl.cache_data
-def load_document(path_document):
-    df = pd.read_csv(path_document, sep=',')
-    date_cols = ['created_at', 'updated_at']
-    for col in date_cols:
+
+def _clean_logs_df(df):
+    for col in ['created_at', 'updated_at']:
         if col in df.columns:
-            df[col] = pd.to_datetime(df[col], errors='coerce')
-    for col in ["client","candidate","portal","description","category","process_selective","stage","step","situation","component"]:
+            df[col] = pd.to_datetime(df[col], format='%d/%m/%Y às %H:%M:%S', errors='coerce')
+
+    for col in ["client", "candidate", "portal", "description", "category",
+                "process_selective", "stage", "step", "situation", "component"]:
         if col in df.columns:
             df[col] = df[col].fillna('N/A')
-
     return df
+
+
+@stl.cache_data(ttl=3600, show_spinner="Carregando logs dos últimos 4 dias...")
+def fetch_logs():
+    api_key = stl.secrets['api_key']
+    headers = {"x-api-key": api_key}
+    payload = {
+        "page": 1,
+        "perPage": 20000,
+        "filter": {}
+    }
+    response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
+    response.raise_for_status()
+    records = response.json().get(JSON_DATA_KEY, [])
+    df = pd.DataFrame.from_records(records)
+    return _clean_logs_df(df), datetime.now()
+
+
 stl.set_page_config(
     page_title="Logs",
     layout="wide"
 )
-# path_document = stl.sidebar.file_uploader(label="Carregue seu arquivo CSV de logs", type=["csv"])
-response = requests.get(url, auth=(usuario, senha))
-csv_content = response.text
-# LINHA CORRIGIDA
-df_original = pd.read_csv(io.BytesIO(response.content), encoding='utf-8', engine='python', on_bad_lines='skip')
-df_original['created_at'] = pd.to_datetime(df_original['created_at'], errors='coerce')
-# path_document = "./logsv2.csv"
-#if path_document is None:
-#    stl.info("Por favor, carregue um arquivo CSV para começar.")
-#    stl.stop()
 
-#df_original = load_document(path_document)
+df_original, cached_at = fetch_logs()
 
-if df_original is None:
+if df_original is None or df_original.empty:
+    stl.warning("Nenhum dado retornado pela API de logs.")
     stl.stop()
 
 
@@ -156,6 +196,35 @@ if df_filtered.empty:
 # Indicadores
 
 stl.title("Dashboard de Monitoramento de Logs de Erro")
+
+cache_age_delta = datetime.now() - cached_at
+cache_age_mins = int(cache_age_delta.total_seconds() // 60)
+if cache_age_mins < 1:
+    cache_age_str = "agora mesmo"
+elif cache_age_mins < 60:
+    cache_age_str = f"há {cache_age_mins} min"
+else:
+    cache_age_h = cache_age_mins // 60
+    cache_age_m = cache_age_mins % 60
+    cache_age_str = f"há {cache_age_h}h{cache_age_m:02d}min"
+
+col_btn, col_cache = stl.columns([1, 2.5])
+with col_btn:
+    if stl.button("🔄 Recarregar logs", help="Limpa o cache e busca novos dados da API", use_container_width=True):
+        stl.cache_data.clear()
+        stl.rerun()
+col_cache.markdown(
+    f"""
+    <div class="cache-info">
+        <span class="dot"></span>
+        <span class="label">Cache</span>
+        <span class="value">{cached_at.strftime('%d/%m/%Y %H:%M:%S')}</span>
+        <span class="age">({cache_age_str})</span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 stl.markdown("### Indicadores")
 
 count_total = df_filtered.shape[0]
