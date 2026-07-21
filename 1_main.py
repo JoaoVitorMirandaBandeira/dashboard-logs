@@ -2,7 +2,8 @@ import streamlit as stl
 import pandas as pd
 import plotly.express as px
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 stl.markdown("""
 <style>
@@ -77,7 +78,8 @@ def fetch_logs():
     response.raise_for_status()
     records = response.json().get(JSON_DATA_KEY, [])
     df = pd.DataFrame.from_records(records)
-    return _clean_logs_df(df), datetime.now()
+    sp_time = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=-3)))
+    return _clean_logs_df(df), sp_time.replace(tzinfo=None)
 
 
 stl.set_page_config(
