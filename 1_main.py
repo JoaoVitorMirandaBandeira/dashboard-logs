@@ -198,8 +198,10 @@ if df_filtered.empty:
 # Indicadores
 
 stl.title("Dashboard de Monitoramento de Logs de Erro")
+if cached_at.tzinfo is None:
+    cached_at = cached_at.replace(tzinfo=timezone(timedelta(hours=-3)))
 
-cache_age_delta = datetime.now() - cached_at
+cache_age_delta = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=-3))) - cached_at
 cache_age_mins = int(cache_age_delta.total_seconds() // 60)
 if cache_age_mins < 1:
     cache_age_str = "agora mesmo"
